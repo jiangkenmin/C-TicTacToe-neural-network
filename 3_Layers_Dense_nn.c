@@ -157,7 +157,7 @@ void main() {
 
     RandomizeWeightTensor(&weightTensor_1[0][0], layer1_neuronNum, inputLength + 1);
     RandomizeWeightTensor(&weightTensor_2[0][0], layer2_neuronNum, layer1_neuronNum + 1);
-    RandomizeWeightTensor(&weightTensor_2[0][0], layer3_neuronNum, layer2_neuronNum + 1);
+    // RandomizeWeightTensor(&weightTensor_3[0][0], layer3_neuronNum, layer2_neuronNum + 1);
 
     int batchSize = batchNum;
     double learningRate = 0.001;
