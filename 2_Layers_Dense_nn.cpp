@@ -1,10 +1,10 @@
-﻿#include <chrono>
+#include <chrono>
 #include <iostream>
 #include <stdlib.h>
 
 # define inputLength 2
 # define batchNum 100
-// This is a dense neural network with 2 layers, 8 neurons in the first layer and 1 neuron in the second layer.
+// This is a dense neural network with 2 layers, weight updated by SGD
 # define layer1_neuronNum 8
 # define layer2_neuronNum 1
 
@@ -25,6 +25,9 @@ static double Linear(double* inputTensor, int inputSize, double* weightTensor) {
 static double ReLU(double x) {
     return x > 0 ? x : 0;
 }
+static double Sigmoid(double x) {
+    return 1.0 / (1.0 + exp(-x));
+}
 
 static double Loss(double prediction, double label) {
     return (prediction - label) * (prediction - label);
@@ -43,11 +46,14 @@ static double LossDerivative(double prediction, double label) {
 static double ReLUDerivative(double x) {
     return x > 0 ? 1.0 : 0.0;
 }
+static double SigmoidDerivative(double x) {
+    return x * (1.0 - x);
+}
 
 static void UpdateWeights(double* inputTensor, double* layer1_outputTensor, double* layer2_outputTensor, double* labelTensor, int inputSize, int batchSize, double weightTensor_1[][inputLength + 1], double weightTensor_2[][layer1_neuronNum + 1], double learningRate) {
     double layer2_error = LossDerivative(layer2_outputTensor[0], labelTensor[0]);
-    double layer2_delta = layer2_error * ReLUDerivative(layer2_outputTensor[0]);
-
+    double layer2_delta = layer2_error * SigmoidDerivative(layer2_outputTensor[0]);
+    double layer2_delta = layer2_error;
     // 更新第二层权重
     for (int j = 0; j < layer1_neuronNum; j++) {
         weightTensor_2[0][j] -= learningRate * layer2_delta * layer1_outputTensor[j];
@@ -76,7 +82,7 @@ static double Forward(double* inputTensor, int inputSize, double weightTensor_1[
     // 第二层有 1 个神经元
     for (int i = 0; i < 1; i++) {
         layer2_outputTensor[i] = Linear(layer1_outputTensor, layer1_neuronNum, weightTensor_2[i]);
-        layer2_outputTensor[i] = ReLU(layer2_outputTensor[i]);
+        layer2_outputTensor[i] = Sigmoid(layer2_outputTensor[i]);
     }
     return layer2_outputTensor[0];
 }
@@ -86,11 +92,12 @@ double labelTensor[batchNum][layer2_neuronNum] = { 0 }; // 标签集
 double weightTensor_1[layer1_neuronNum][inputLength + 1] = { 0 }; // 第一层权重
 double weightTensor_2[layer2_neuronNum][layer1_neuronNum + 1] = { 0 }; // 第二层权重
 
-double layer1_outputTensor[batchNum][layer1_neuronNum] = { 0 };
-double layer2_outputTensor[batchNum][layer2_neuronNum] = { 0 };
+double layer1_outputTensor[layer1_neuronNum] = { 0 };
+double layer2_outputTensor[layer2_neuronNum] = { 0 };
 double predictedTensor[batchNum][1] = { 0 };
 
 void main() {
+    // 生成数据集
     for (int i = 0; i < batchNum; i++) {
         dataTensor[i][0] = rand() % 1000 / 1000.0;
         dataTensor[i][1] = rand() % 1000 / 1000.0;
@@ -108,8 +115,8 @@ void main() {
 
     for (int epoch = 0; epoch < 1000; epoch++) {
         for (int i = 0; i < batchSize; i++) {
-            predictedTensor[i][0] = Forward(dataTensor[i], inputLength, weightTensor_1, weightTensor_2, layer1_outputTensor[i], layer2_outputTensor[i]);
-            UpdateWeights(dataTensor[i], layer1_outputTensor[i], layer2_outputTensor[i], labelTensor[i], inputLength, batchSize, weightTensor_1, weightTensor_2, learningRate);
+            predictedTensor[i][0] = Forward(dataTensor[i], inputLength, weightTensor_1, weightTensor_2, layer1_outputTensor, layer2_outputTensor);
+            UpdateWeights(dataTensor[i], layer1_outputTensor, layer2_outputTensor, labelTensor[i], inputLength, batchSize, weightTensor_1, weightTensor_2, learningRate);
         }
 
         double loss = BatchLoss(predictedTensor, labelTensor, batchSize);
@@ -122,7 +129,7 @@ void main() {
     for (int i = 0; i < 100000; i++) {
         x[0] = (rand() % 1000 / 1000.0) - 0.5;
         x[1] = (rand() % 1000 / 1000.0) - 0.5;
-        double prediction = Forward(x, inputLength, weightTensor_1, weightTensor_2, layer1_outputTensor[0], layer2_outputTensor[0]);
+        double prediction = Forward(x, inputLength, weightTensor_1, weightTensor_2, layer1_outputTensor, layer2_outputTensor);
     }
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
