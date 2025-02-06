@@ -50,9 +50,9 @@ static double SigmoidDerivative(double x) {
     return x * (1.0 - x);
 }
 
-static void UpdateWeights(double* inputTensor, double* layer1_outputTensor, double* layer2_outputTensor, double* labelTensor, int inputSize, int batchSize, double weightTensor_1[][inputLength + 1], double weightTensor_2[][layer1_neuronNum + 1], double learningRate) {
+static void UpdateWeights(double* inputTensor, double* layer1_outputTensor, double* layer2_outputTensor, double* labelTensor, double weightTensor_1[][inputLength + 1], double weightTensor_2[][layer1_neuronNum + 1], double learningRate) {
     double layer2_error = LossDerivative(layer2_outputTensor[0], labelTensor[0]);
-    double layer2_delta = layer2_error * SigmoidDerivative(layer2_outputTensor[0]);
+    //double layer2_delta = layer2_error * SigmoidDerivative(layer2_outputTensor[0]);
     double layer2_delta = layer2_error;
     // 更新第二层权重
     for (int j = 0; j < layer1_neuronNum; j++) {
@@ -72,7 +72,7 @@ static void UpdateWeights(double* inputTensor, double* layer1_outputTensor, doub
         weightTensor_1[j][inputLength] -= learningRate * layer1_delta; // 更新第一层偏置
     }
 }
-static double Forward(double* inputTensor, int inputSize, double weightTensor_1[][inputLength + 1], double weightTensor_2[][layer1_neuronNum + 1], double* layer1_outputTensor, double* layer2_outputTensor) {
+static double Forward(double* inputTensor, double weightTensor_1[][inputLength + 1], double weightTensor_2[][layer1_neuronNum + 1], double* layer1_outputTensor, double* layer2_outputTensor) {
     // 第一层有 layer1_neuronNum 个神经元
     for (int i = 0; i < layer1_neuronNum; i++) {
         layer1_outputTensor[i] = Linear(inputTensor, inputLength, weightTensor_1[i]);
@@ -82,7 +82,7 @@ static double Forward(double* inputTensor, int inputSize, double weightTensor_1[
     // 第二层有 1 个神经元
     for (int i = 0; i < 1; i++) {
         layer2_outputTensor[i] = Linear(layer1_outputTensor, layer1_neuronNum, weightTensor_2[i]);
-        layer2_outputTensor[i] = Sigmoid(layer2_outputTensor[i]);
+        //layer2_outputTensor[i] = Sigmoid(layer2_outputTensor[i]);
     }
     return layer2_outputTensor[0];
 }
@@ -116,7 +116,7 @@ void main() {
     for (int epoch = 0; epoch < 1000; epoch++) {
         for (int i = 0; i < batchSize; i++) {
             predictedTensor[i][0] = Forward(dataTensor[i], inputLength, weightTensor_1, weightTensor_2, layer1_outputTensor, layer2_outputTensor);
-            UpdateWeights(dataTensor[i], layer1_outputTensor, layer2_outputTensor, labelTensor[i], inputLength, batchSize, weightTensor_1, weightTensor_2, learningRate);
+            UpdateWeights(dataTensor[i], layer1_outputTensor, layer2_outputTensor, labelTensor[i], weightTensor_1, weightTensor_2, learningRate);
         }
 
         double loss = BatchLoss(predictedTensor, labelTensor, batchSize);
@@ -126,7 +126,7 @@ void main() {
     // 测试循环 10 万次的时间
     double x[2] = { 0, 0 };
     auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < 100000; i++) {
+    for (int i = 0; i < 10000; i++) {
         x[0] = (rand() % 1000 / 1000.0) - 0.5;
         x[1] = (rand() % 1000 / 1000.0) - 0.5;
         double prediction = Forward(x, inputLength, weightTensor_1, weightTensor_2, layer1_outputTensor, layer2_outputTensor);
@@ -134,6 +134,11 @@ void main() {
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     std::cout << "Time elapsed: " << duration.count() << " microseconds\n";
+
+    x[0] = 0.3;
+    x[1] = 0.2;
+    double prediction = Forward(x, weightTensor_1, weightTensor_2, layer1_outputTensor, layer2_outputTensor);
+    std::cout << x[0] << " " << x[1] << " " << prediction << std::endl;
 
     return;
 }
