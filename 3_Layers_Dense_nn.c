@@ -1,3 +1,4 @@
+// to identify if two points are both in a circle
 #include <chrono>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,7 +7,7 @@
 # define inputLength 2
 # define batchNum 200
 // This is a dense neural network with 3 layers, weight updated by SGD
-# define layer1_neuronNum 32
+# define layer1_neuronNum 16
 # define layer2_neuronNum 4
 # define layer3_neuronNum 1
 
@@ -155,8 +156,8 @@ void main() {
     for (int i = 0; i < batchNum; i++) {
         dataTensor[i][0] = rand() % 1000 / 1000.0;
         dataTensor[i][1] = rand() % 1000 / 1000.0;
-        double temp = dataTensor[i][0] + dataTensor[i][1];
-        temp = temp > 1.0 ? 1.0 : 0.0; // 判断是否大于 1.0
+        double temp = sqrt(dataTensor[i][0] * dataTensor[i][0] + dataTensor[i][1] * dataTensor[i][1]);
+        temp = temp < 0.6 ? 1.0 : 0.0; // 判断是否大于 1.0
         labelTensor[i][0] = temp;
         printf("%f  %f  %f\n", dataTensor[i][0], dataTensor[i][1], labelTensor[i][0]);
     }
@@ -195,8 +196,8 @@ void main() {
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
     printf("Time elapsed: %f nanoseconds\n", duration.count() / 10000.0);
 
-    x[0] = 0.1;
-    x[1] = 0.0;
+    x[0] = 0.7;
+    x[1] = 0.1;
     double prediction = Forward(x, weightTensor_1, weightTensor_2, weightTensor_3, layer1_outputTensor, layer2_outputTensor, layer3_outputTensor);
     printf("%f  %f  %f", x[0], x[1], prediction);
 
