@@ -16,7 +16,10 @@ static void RandomizeWeightTensor(double* weightTensor, int rows, int cols) {
 }
 
 static double LearningRateDecay(int epoch, double initialLearningRate, int initialEpoch) {
-    return initialLearningRate * exp(-((double)epoch / initialEpoch) * 4.60517);
+    if (epoch < initialEpoch / 2)
+        return initialLearningRate * exp(-((double)epoch / (initialEpoch / 2)) * 4.60517);
+    else
+        return initialLearningRate * 0.01;
 }
 
 static double Linear(double* inputTensor, int inputSize, double* weightTensor) {
@@ -132,18 +135,31 @@ void main() {
 
     const int batchSize = batchNum;
     const double initialLearningRate = 0.005;
-    const int initialEpoch = 20000;
+    const int initialEpoch = 50000;
+    const int patience = 5000;
 
+    double lowestLoss = 1000000.0;
+    int lowestLossEpoch = 0;
     for (int epoch = 1; epoch <= initialEpoch; epoch++) {
         double learningRate = LearningRateDecay(epoch, initialLearningRate, initialEpoch);
         for (int i = 0; i < batchSize; i++) {
-            predictedTensor[i][0] = Forward(dataTensor[i], weightTensor_1, weightTensor_2,
+            predictedTensor[i][0] = Forward(
+                dataTensor[i], weightTensor_1, weightTensor_2,
                 layer1_outputTensor, layer2_outputTensor);
+
             UpdateWeights(dataTensor[i], layer1_outputTensor, layer2_outputTensor,
                 labelTensor[i], weightTensor_1, weightTensor_2, learningRate);
         }
+        double batchLoss = BatchLoss(predictedTensor, labelTensor, batchSize);
+        if (batchLoss < lowestLoss * 0.99999) {
+            lowestLoss = batchLoss;
+            lowestLossEpoch = epoch;
+        }
+        if (epoch - lowestLossEpoch > patience) {
+            printf("Early stopping at epoch %d   BatchLoss = %f\n", epoch, batchLoss);
+            break;
+        }
         if (epoch < 100 || epoch % 1000 == 0) {
-            double batchLoss = BatchLoss(predictedTensor, labelTensor, batchSize);
             printf("Epoch %d  BatchLoss = %f  lr = %f\n", epoch, batchLoss, learningRate);
         }
     }
