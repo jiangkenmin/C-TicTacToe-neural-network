@@ -4,9 +4,9 @@
 #include <math.h>
 
 # define inputLength 2
-# define batchNum 200
+# define batchNum 800
 // This is a dense neural network with 2 layers, weight updated by SGD
-# define layer1_neuronNum 8
+# define layer1_neuronNum 4
 # define layer2_neuronNum 1
 
 static void RandomizeWeightTensor(double* weightTensor, int rows, int cols) {
@@ -55,7 +55,15 @@ static double SigmoidDerivative(double x) {
     return x * (1.0 - x);
 }
 
-static void UpdateWeights(double* inputTensor, double* layer1_outputTensor, double* layer2_outputTensor, double* labelTensor, double weightTensor_1[][inputLength + 1], double weightTensor_2[][layer1_neuronNum + 1], double learningRate) {
+static void UpdateWeights(
+    double* inputTensor, 
+    double* layer1_outputTensor, 
+    double* layer2_outputTensor, 
+    double* labelTensor, 
+    double weightTensor_1[][inputLength + 1], 
+    double weightTensor_2[][layer1_neuronNum + 1], 
+    double learningRate) {
+    
     double layer2_error = LossDerivative(layer2_outputTensor[0], labelTensor[0]);
     double layer2_delta = layer2_error * SigmoidDerivative(layer2_outputTensor[0]);
 
@@ -77,7 +85,12 @@ static void UpdateWeights(double* inputTensor, double* layer1_outputTensor, doub
         weightTensor_1[j][inputLength] -= learningRate * layer1_delta; // 更新第一层偏置
     }
 }
-static double Forward(double* inputTensor, double weightTensor_1[][inputLength + 1], double weightTensor_2[][layer1_neuronNum + 1], double* layer1_outputTensor, double* layer2_outputTensor) {
+static double Forward(
+    double* inputTensor, 
+    double weightTensor_1[][inputLength + 1], 
+    double weightTensor_2[][layer1_neuronNum + 1], 
+    double* layer1_outputTensor, 
+    double* layer2_outputTensor) {
     // 第一层有 layer1_neuronNum 个神经元
     for (int i = 0; i < layer1_neuronNum; i++) {
         layer1_outputTensor[i] = Linear(inputTensor, inputLength, weightTensor_1[i]);
@@ -94,11 +107,13 @@ static double Forward(double* inputTensor, double weightTensor_1[][inputLength +
 
 double dataTensor[batchNum][inputLength] = { 0 }; // 数据集
 double labelTensor[batchNum][layer2_neuronNum] = { 0 }; // 标签集
+
 double weightTensor_1[layer1_neuronNum][inputLength + 1] = { 0 }; // 第一层权重
 double weightTensor_2[layer2_neuronNum][layer1_neuronNum + 1] = { 0 }; // 第二层权重
 
 double layer1_outputTensor[layer1_neuronNum] = { 0 };
 double layer2_outputTensor[layer2_neuronNum] = { 0 };
+
 double predictedTensor[batchNum][1] = { 0 };
 
 void main() {
@@ -151,7 +166,7 @@ void main() {
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1 - (t3 - t2));
     printf("Time elapsed: %f nanoseconds\n", duration.count() / 10000.0);
 
-    x[0] = 0.0;
+    x[0] = 0.2;
     x[1] = 0.7;
     prediction = Forward(x, weightTensor_1, weightTensor_2, layer1_outputTensor, layer2_outputTensor);
     printf("sqrt(%f^2 + %f^2) = %f  %f\n", x[0], x[1], sqrt(x[0] * x[0] + x[1] * x[1]), prediction);
