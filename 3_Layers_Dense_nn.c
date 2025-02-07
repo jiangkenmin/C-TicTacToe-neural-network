@@ -4,10 +4,10 @@
 #include <math.h>
 
 # define inputLength 2
-# define batchNum 300
+# define batchNum 1200
 // This is a dense neural network with 3 layers, weight updated by SGD
-# define layer1_neuronNum 16
-# define layer2_neuronNum 4
+# define layer1_neuronNum 4
+# define layer2_neuronNum 2
 # define layer3_neuronNum 1
 
 static void RandomizeWeightTensor(double* weightTensor, int rows, int cols) {
@@ -53,7 +53,6 @@ static double LossDerivative(double prediction, double label) {
 static double ReLUDerivative(double x) {
     return x > 0 ? 1.0 : 0.0;
 }
-
 static double SigmoidDerivative(double x) {
     return x * (1.0 - x);
 }
@@ -165,9 +164,9 @@ void main() {
     RandomizeWeightTensor(&weightTensor_2[0][0], layer2_neuronNum, layer1_neuronNum + 1);
     RandomizeWeightTensor(&weightTensor_3[0][0], layer3_neuronNum, layer2_neuronNum + 1);
 
-    int batchSize = batchNum;
-    double initialLearningRate = 0.01;
-    int initialEpoch = 20000;
+    const int batchSize = batchNum;
+    const double initialLearningRate = 0.005;
+    const int initialEpoch = 20000;
 
     for (int epoch = 1; epoch <= initialEpoch; epoch++) {
         double learningRate = LearningRateDecay(epoch, initialLearningRate, initialEpoch);
@@ -177,7 +176,7 @@ void main() {
             UpdateWeights(dataTensor[i], layer1_outputTensor, layer2_outputTensor, layer3_outputTensor, 
                 labelTensor[i], weightTensor_1, weightTensor_2, weightTensor_3, learningRate);
         }
-        if (epoch % 100 == 0) {
+        if (epoch < 100 || epoch % 1000 == 0) {
             double batchLoss = BatchLoss(predictedTensor, labelTensor, batchSize);
             printf("Epoch %d  BatchLoss = %f  lr = %f\n", epoch, batchLoss, learningRate);
         }
@@ -185,19 +184,25 @@ void main() {
 
     // 测试循环 1 万次的时间
     double x[2] = { 0, 0 };
-    auto start = std::chrono::high_resolution_clock::now();
+    double prediction;
+    auto t1 = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < 10000; i++) {
-        x[0] = (rand() % 1000 / 100.0) - 5.0;
-        x[1] = (rand() % 1000 / 100.0) - 5.0;
-        double prediction = Forward(x, weightTensor_1, weightTensor_2, weightTensor_3, layer1_outputTensor, layer2_outputTensor, layer3_outputTensor);
+        x[0] = (rand() % 1000 / 1000.0);
+        x[1] = (rand() % 1000 / 1000.0);
+        prediction = Forward(x, weightTensor_1, weightTensor_2, weightTensor_3, layer1_outputTensor, layer2_outputTensor, layer3_outputTensor);
     }
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+    auto t2 = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < 10000; i++) {
+        x[0] = (rand() % 1000 / 1000.0);
+        x[1] = (rand() % 1000 / 1000.0);
+    }
+    auto t3 = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1 - (t3 - t2));
     printf("Time elapsed: %f nanoseconds\n", duration.count() / 10000.0);
 
-    x[0] = 0.5;
-    x[1] = 0.1;
-    double prediction = Forward(x, weightTensor_1, weightTensor_2, weightTensor_3, layer1_outputTensor, layer2_outputTensor, layer3_outputTensor);
+    x[0] = 0.0;
+    x[1] = 0.7;
+    prediction = Forward(x, weightTensor_1, weightTensor_2, weightTensor_3, layer1_outputTensor, layer2_outputTensor, layer3_outputTensor);
     printf("sqrt(%f^2 + %f^2) = %f  %f\n", x[0], x[1], sqrt(x[0] * x[0] + x[1] * x[1]), prediction);
 
     return;
