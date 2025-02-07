@@ -1,11 +1,10 @@
-// to identify if two points are both in a circle
 #include <chrono>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
 # define inputLength 2
-# define batchNum 200
+# define batchNum 300
 // This is a dense neural network with 3 layers, weight updated by SGD
 # define layer1_neuronNum 16
 # define layer2_neuronNum 4
@@ -157,7 +156,7 @@ void main() {
         dataTensor[i][0] = rand() % 1000 / 1000.0;
         dataTensor[i][1] = rand() % 1000 / 1000.0;
         double temp = sqrt(dataTensor[i][0] * dataTensor[i][0] + dataTensor[i][1] * dataTensor[i][1]);
-        temp = temp < 0.6 ? 1.0 : 0.0; // 判断是否大于 1.0
+        temp = temp < 0.6 ? 1.0 : 0.0; // 判断点是否在半径为 0.6 的圆内
         labelTensor[i][0] = temp;
         printf("%f  %f  %f\n", dataTensor[i][0], dataTensor[i][1], labelTensor[i][0]);
     }
@@ -196,10 +195,10 @@ void main() {
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
     printf("Time elapsed: %f nanoseconds\n", duration.count() / 10000.0);
 
-    x[0] = 0.7;
+    x[0] = 0.5;
     x[1] = 0.1;
     double prediction = Forward(x, weightTensor_1, weightTensor_2, weightTensor_3, layer1_outputTensor, layer2_outputTensor, layer3_outputTensor);
-    printf("%f  %f  %f", x[0], x[1], prediction);
+    printf("sqrt(%f^2 + %f^2) = %f  %f\n", x[0], x[1], sqrt(x[0] * x[0] + x[1] * x[1]), prediction);
 
     return;
 }
